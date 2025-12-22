@@ -3,7 +3,7 @@ import {
   SummarizeThemeProvider,
   useSummarizeTheme,
 } from "../context/SummarizeThemeContext";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const LEFT_OFFSET = 20;
 
 export default function Summarize() {
@@ -361,4 +361,5 @@ const selectStyle = {
   cursor: "pointer",
   background: "white",
 };
+
 
