@@ -48,7 +48,8 @@ function SummarizeContent() {
         setLoadingLLM(true);
         setLlmError("");
 
-        const res = await fetch("http://localhost:8000/api/llm-insights", {
+         const res = await fetch(`${API_BASE_URL}/api/llm-insights`, {
+
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profile),
@@ -81,7 +82,7 @@ function SummarizeContent() {
 
       sessionStorage.removeItem("llmInsights");
 
-      const res = await fetch("http://localhost:8000/api/llm-insights", {
+      const res = await fetch(`${API_BASE_URL}/api/llm-insights`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profile),
@@ -360,3 +361,4 @@ const selectStyle = {
   cursor: "pointer",
   background: "white",
 };
+
