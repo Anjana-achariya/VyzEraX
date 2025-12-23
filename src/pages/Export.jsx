@@ -1,119 +1,44 @@
 import React, { useState } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 export default function Export() {
-  const [target, setTarget] = useState("summary"); // summary | dashboard
-  const [format, setFormat] = useState("pdf"); // pdf | image
+  const [target, setTarget] = useState("summary");
+  const [format, setFormat] = useState("pdf");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* ───── wait for element to exist in DOM ───── */
-  const waitForElement = (id, timeout = 2000) =>
-    new Promise((resolve, reject) => {
-      const start = Date.now();
-      const timer = setInterval(() => {
-        const el = document.getElementById(id);
-        if (el) {
-          clearInterval(timer);
-          resolve(el);
-        }
-        if (Date.now() - start > timeout) {
-          clearInterval(timer);
-          reject(new Error("Export content not found"));
-        }
-      }, 100);
-    });
-
-  const expandCanvases = () => {
-    document.querySelectorAll("canvas").forEach((c) => {
-      c.dataset.originalHeight = c.style.height;
-      c.style.height = "110%";
-    });
-  };
-
-  const restoreCanvases = () => {
-    document.querySelectorAll("canvas").forEach((c) => {
-      c.style.height = c.dataset.originalHeight || "";
-      delete c.dataset.originalHeight;
-    });
-  };
-
-  const handleExport = async (e) => {
-    e.preventDefault();
+  const handleExport = () => {
     setError("");
     setLoading(true);
 
-    const elementId =
-      target === "dashboard" ? "dashboard-export" : "summary-export";
+    // 🔥 tell the active page to export itself
+    window.dispatchEvent(
+      new CustomEvent("APP_EXPORT", {
+        detail: { target, format },
+      })
+    );
 
-    try {
-      // ✅ wait until the element actually exists
-      const element = await waitForElement(elementId);
-
-      expandCanvases();
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-      });
-
-      restoreCanvases();
-
-      if (format === "image") {
-        const link = document.createElement("a");
-        link.href = canvas.toDataURL("image/png");
-        link.download = `${target}-export.png`;
-        link.click();
-      } else {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-
-        const w = pdf.internal.pageSize.getWidth();
-        const h = (canvas.height * w) / canvas.width;
-
-        pdf.addImage(imgData, "PNG", 0, 0, w, h);
-        pdf.save(`${target}-export.pdf`);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Unable to export selected content");
-    } finally {
-      setLoading(false);
-    }
+    // small UX delay
+    setTimeout(() => setLoading(false), 800);
   };
 
   return (
-    <div
-      style={{
-        padding: "48px 32px",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "520px",
-          background: "#ffffff",
-          borderRadius: "16px",
-          padding: "32px",
-          boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
-        }}
-      >
+    <div style={{ padding: "48px 32px", display: "flex", justifyContent: "center" }}>
+      <div style={{
+        width: "100%",
+        maxWidth: "520px",
+        background: "#fff",
+        borderRadius: "16px",
+        padding: "32px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+      }}>
         <h2 style={{ marginBottom: "24px" }}>Export Report</h2>
 
-        {/* Export Target */}
         <div style={{ marginBottom: "20px" }}>
-          <p style={{ fontWeight: 600, marginBottom: "10px" }}>
-            What do you want to export?
-          </p>
+          <p style={{ fontWeight: 600 }}>What do you want to export?</p>
 
           <label style={radioStyle}>
             <input
               type="radio"
-              value="dashboard"
               checked={target === "dashboard"}
               onChange={() => setTarget("dashboard")}
             />
@@ -123,7 +48,6 @@ export default function Export() {
           <label style={radioStyle}>
             <input
               type="radio"
-              value="summary"
               checked={target === "summary"}
               onChange={() => setTarget("summary")}
             />
@@ -131,16 +55,12 @@ export default function Export() {
           </label>
         </div>
 
-        {/* Export Format */}
         <div style={{ marginBottom: "24px" }}>
-          <p style={{ fontWeight: 600, marginBottom: "10px" }}>
-            Export format
-          </p>
+          <p style={{ fontWeight: 600 }}>Export format</p>
 
           <label style={radioStyle}>
             <input
               type="radio"
-              value="pdf"
               checked={format === "pdf"}
               onChange={() => setFormat("pdf")}
             />
@@ -150,7 +70,6 @@ export default function Export() {
           <label style={radioStyle}>
             <input
               type="radio"
-              value="image"
               checked={format === "image"}
               onChange={() => setFormat("image")}
             />
@@ -158,9 +77,7 @@ export default function Export() {
           </label>
         </div>
 
-        {/* Export Button */}
         <button
-          type="button"
           onClick={handleExport}
           disabled={loading}
           style={{
@@ -171,26 +88,13 @@ export default function Export() {
             background: "#ff8fab",
             color: "#fff",
             fontWeight: "bold",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
+            cursor: "pointer",
           }}
         >
           {loading ? "Exporting..." : "Export"}
         </button>
 
-        {error && (
-          <p style={{ color: "red", marginTop: "16px" }}>{error}</p>
-        )}
-
-        <p
-          style={{
-            marginTop: "20px",
-            fontSize: "13px",
-            opacity: 0.7,
-          }}
-        >
-          Tip: Export captures exactly what you see on screen.
-        </p>
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
     </div>
   );
