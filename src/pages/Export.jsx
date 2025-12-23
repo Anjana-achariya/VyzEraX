@@ -1,92 +1,76 @@
 import React, { useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useNavigate } from "react-router-dom";
-
 
 export default function Export() {
   const [target, setTarget] = useState("summary"); // summary | dashboard
   const [format, setFormat] = useState("pdf"); // pdf | image
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const expandCanvases = () => {
-  const canvases = document.querySelectorAll("canvas");
-  canvases.forEach((c) => {
-    c.dataset.originalHeight = c.style.height;
-    c.style.height = "110%"; // add breathing room
-  });
-};
-
-const restoreCanvases = () => {
-  const canvases = document.querySelectorAll("canvas");
-  canvases.forEach((c) => {
-    c.style.height = c.dataset.originalHeight || "";
-    delete c.dataset.originalHeight;
-  });
-};
-
-
-
-  const handleExport = async () => {
-  setError("");
-  setLoading(true);
-
-  const targetRoute = target === "dashboard" ? "/dashboard" : "/summarize";
-  const elementId =
-    target === "dashboard" ? "dashboard-export" : "summary-export";
-
-  try {
-    // 1. Navigate to target page
-    navigate(targetRoute);
-
-    // 2. Wait for DOM to render
-    await new Promise((r) => setTimeout(r, 800));
-
-    const element = document.getElementById(elementId);
-    if (!element) {
-      throw new Error("Export content not found");
-    }
-
-    expandCanvases();
-   
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
+    const canvases = document.querySelectorAll("canvas");
+    canvases.forEach((c) => {
+      c.dataset.originalHeight = c.style.height;
+      c.style.height = "110%";
     });
+  };
 
-    restoreCanvases();
+  const restoreCanvases = () => {
+    const canvases = document.querySelectorAll("canvas");
+    canvases.forEach((c) => {
+      c.style.height = c.dataset.originalHeight || "";
+      delete c.dataset.originalHeight;
+    });
+  };
 
+  const handleExport = async (e) => {
+    e.preventDefault(); // ✅ prevents any reload
+    setError("");
+    setLoading(true);
 
-    if (format === "image") {
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = `${target}-export.png`;
-      link.click();
-    } else {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
+    const elementId =
+      target === "dashboard" ? "dashboard-export" : "summary-export";
 
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height * w) / canvas.width;
+    try {
+      // ✅ capture CURRENT DOM — no navigation
+      const element = document.getElementById(elementId);
+      if (!element) {
+        throw new Error("Export content not found");
+      }
 
-      pdf.addImage(imgData, "PNG", 0, 0, w, h);
-      pdf.save(`${target}-export.pdf`);
+      expandCanvases();
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+      });
+
+      restoreCanvases();
+
+      if (format === "image") {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `${target}-export.png`;
+        link.click();
+      } else {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+
+        const w = pdf.internal.pageSize.getWidth();
+        const h = (canvas.height * w) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, w, h);
+        pdf.save(`${target}-export.pdf`);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Unable to export selected content");
+    } finally {
+      setLoading(false);
     }
-
-    // 3. Navigate back to export page
-    navigate("/export");
-  } catch (err) {
-    console.error(err);
-    setError("Unable to export selected content");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div
@@ -164,6 +148,7 @@ const restoreCanvases = () => {
 
         {/* Export Button */}
         <button
+          type="button"
           onClick={handleExport}
           disabled={loading}
           style={{
