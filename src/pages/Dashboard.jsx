@@ -1,4 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
+
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 import {
   Chart as ChartJS,
   BarElement,
@@ -761,4 +765,5 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
