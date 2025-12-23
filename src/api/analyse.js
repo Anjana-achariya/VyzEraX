@@ -4,6 +4,8 @@ export async function analyseDataset(file) {
   const formData = new FormData();
   formData.append("file", file);
 
+  console.log("API:", API_BASE_URL);
+
   const response = await fetch(`${API_BASE_URL}/api/analyse`, {
     method: "POST",
     body: formData,
@@ -15,4 +17,3 @@ export async function analyseDataset(file) {
 
   return await response.json();
 }
-
