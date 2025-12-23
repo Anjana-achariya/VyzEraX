@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 import {
   SummarizeThemeProvider,
   useSummarizeTheme,
@@ -42,6 +45,35 @@ function SummarizeContent() {
       setLlmData(JSON.parse(cached));
       return;
     }
+
+  useEffect(() => {
+  const handler = async (e) => {
+    if (e.detail.target !== "summary") return;
+
+    const element = document.getElementById("summary-export");
+    if (!element) return;
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    if (e.detail.format === "image") {
+      const a = document.createElement("a");
+      a.href = imgData;
+      a.download = "summary-export.png";
+      a.click();
+    } else {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, w, h);
+      pdf.save("summary-export.pdf");
+    }
+  };
+
+  window.addEventListener("APP_EXPORT", handler);
+  return () => window.removeEventListener("APP_EXPORT", handler);
+}, []);
+
 
     const fetchInsights = async () => {
       try {
@@ -361,5 +393,6 @@ const selectStyle = {
   cursor: "pointer",
   background: "white",
 };
+
 
 
