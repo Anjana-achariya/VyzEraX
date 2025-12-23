@@ -8,24 +8,39 @@ export default function Export() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  /* ───── wait for element to exist in DOM ───── */
+  const waitForElement = (id, timeout = 2000) =>
+    new Promise((resolve, reject) => {
+      const start = Date.now();
+      const timer = setInterval(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          clearInterval(timer);
+          resolve(el);
+        }
+        if (Date.now() - start > timeout) {
+          clearInterval(timer);
+          reject(new Error("Export content not found"));
+        }
+      }, 100);
+    });
+
   const expandCanvases = () => {
-    const canvases = document.querySelectorAll("canvas");
-    canvases.forEach((c) => {
+    document.querySelectorAll("canvas").forEach((c) => {
       c.dataset.originalHeight = c.style.height;
       c.style.height = "110%";
     });
   };
 
   const restoreCanvases = () => {
-    const canvases = document.querySelectorAll("canvas");
-    canvases.forEach((c) => {
+    document.querySelectorAll("canvas").forEach((c) => {
       c.style.height = c.dataset.originalHeight || "";
       delete c.dataset.originalHeight;
     });
   };
 
   const handleExport = async (e) => {
-    e.preventDefault(); // ✅ prevents any reload
+    e.preventDefault();
     setError("");
     setLoading(true);
 
@@ -33,11 +48,8 @@ export default function Export() {
       target === "dashboard" ? "dashboard-export" : "summary-export";
 
     try {
-      // ✅ capture CURRENT DOM — no navigation
-      const element = document.getElementById(elementId);
-      if (!element) {
-        throw new Error("Export content not found");
-      }
+      // ✅ wait until the element actually exists
+      const element = await waitForElement(elementId);
 
       expandCanvases();
 
