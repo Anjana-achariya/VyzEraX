@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 
-import html2canvas from "html2canvas";
+// import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 import {
@@ -123,38 +123,38 @@ useEffect(() => {
 }, [numericColumns, timeX, timeY]);
 
 
-useEffect(() => {
-  const handler = async (e) => {
-    if (e.detail.target !== "dashboard") return;
+// useEffect(() => {
+//   const handler = async (e) => {
+//     if (e.detail.target !== "dashboard") return;
 
-    const element = document.getElementById("dashboard-export");
-    if (!element) return;
+//     const element = document.getElementById("dashboard-export");
+//     if (!element) return;
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-    });
+//     const canvas = await html2canvas(element, {
+//       scale: 2,
+//       useCORS: true,
+//       backgroundColor: null,
+//     });
 
-    const imgData = canvas.toDataURL("image/png");
+//     const imgData = canvas.toDataURL("image/png");
 
-    if (e.detail.format === "image") {
-      const a = document.createElement("a");
-      a.href = imgData;
-      a.download = "dashboard-export.png";
-      a.click();
-    } else {
-      const pdf = new jsPDF("p", "mm", "a4");
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height * w) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, w, h);
-      pdf.save("dashboard-export.pdf");
-    }
-  };
+//     if (e.detail.format === "image") {
+//       const a = document.createElement("a");
+//       a.href = imgData;
+//       a.download = "dashboard-export.png";
+//       a.click();
+//     } else {
+//       const pdf = new jsPDF("p", "mm", "a4");
+//       const w = pdf.internal.pageSize.getWidth();
+//       const h = (canvas.height * w) / canvas.width;
+//       pdf.addImage(imgData, "PNG", 0, 0, w, h);
+//       pdf.save("dashboard-export.pdf");
+//     }
+//   };
 
-  window.addEventListener("APP_EXPORT", handler);
-  return () => window.removeEventListener("APP_EXPORT", handler);
-}, []);
+//   window.addEventListener("APP_EXPORT", handler);
+//   return () => window.removeEventListener("APP_EXPORT", handler);
+// }, []);
 
 
   /* ─── KPIs ─── */
@@ -765,5 +765,6 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
