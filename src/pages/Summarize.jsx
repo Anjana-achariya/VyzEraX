@@ -192,14 +192,13 @@ function SummarizeContent() {
           <button onClick={() => handleExport("pdf")} style={exportBtn}>
             Export PDF
           </button>
-
           <button onClick={() => handleExport("image")} style={exportBtn}>
             Export Image
           </button>
         </div>
       </div>
 
-      {/* ───── Summary Report ───── */}
+      {/* ───── Report Container ───── */}
       <div
         id="summary-export"
         style={{
@@ -223,6 +222,7 @@ function SummarizeContent() {
           {fileName}
         </p>
 
+        {/* Overview */}
         <Section title="Overview">
           <Insight label="Rows" value={rows.toLocaleString()} />
           <Insight label="Columns" value={columns} />
@@ -230,7 +230,22 @@ function SummarizeContent() {
           <Insight label="Duplicates" value={duplicates} />
         </Section>
 
-        <Section title="Data Quality">
+        {/* Executive Summary */}
+        <Section title="Executive Summary">
+          <Insight label="Numeric Columns" value={column_summary.numeric.length} />
+          <Insight
+            label="Categorical Columns"
+            value={column_summary.categorical.length}
+          />
+          <Insight
+            label="Datetime Columns"
+            value={column_summary.datetime.length}
+          />
+          <Insight label="Text Columns" value={column_summary.text.length} />
+        </Section>
+
+        {/* Data Quality */}
+        <Section title="Data Quality Assessment">
           <Insight
             label="Columns with Missing Data"
             value={Object.keys(missing_values).length}
@@ -241,9 +256,25 @@ function SummarizeContent() {
           />
         </Section>
 
+        {/* EDA */}
+        <Section title="Exploratory Data Analysis">
+          {Object.keys(numeric_stats)
+            .slice(0, 6)
+            .map((col) => (
+              <Insight
+                key={col}
+                label={col}
+                value={`min ${numeric_stats[col].min}, max ${numeric_stats[col].max}`}
+              />
+            ))}
+        </Section>
+
+        {/* AI Insights */}
         {loadingLLM && (
           <Section title="AI Insights">
-            <div style={{ paddingLeft: LEFT_OFFSET }}>Generating insights…</div>
+            <div style={{ paddingLeft: LEFT_OFFSET }}>
+              Generating insights…
+            </div>
           </Section>
         )}
 
@@ -251,6 +282,20 @@ function SummarizeContent() {
           <Section title="AI Insights">
             {llmData.insights.map((text, i) => (
               <Insight key={i} label={`Insight ${i + 1}`} value={text} />
+            ))}
+          </Section>
+        )}
+
+        {llmData?.conclusion && (
+          <Section title="Conclusion & Next Steps">
+            <Insight label="Summary" value={llmData.conclusion.summary} />
+
+            {llmData.conclusion.data_preparation.map((v, i) => (
+              <Insight key={i} label="Data Preparation" value={v} />
+            ))}
+
+            {llmData.conclusion.modeling.map((v, i) => (
+              <Insight key={i} label="Modeling Approach" value={v} />
             ))}
           </Section>
         )}
@@ -263,6 +308,7 @@ function SummarizeContent() {
           </Section>
         )}
 
+        {/* Regenerate */}
         {llmData && (
           <div style={{ paddingLeft: LEFT_OFFSET, marginTop: "24px" }}>
             <button
@@ -278,7 +324,7 @@ function SummarizeContent() {
                 cursor: "pointer",
               }}
             >
-              Regenerate Insights
+              {loadingLLM ? "Regenerating…" : "Regenerate Insights"}
             </button>
           </div>
         )}
@@ -318,7 +364,9 @@ function Insight({ label, value }) {
     >
       <span style={{ opacity: 0.85 }}>{label}</span>
       <span style={{ opacity: 0.6, textAlign: "center" }}>:</span>
-      <span style={{ fontWeight: 600, color: "var(--accent)" }}>{value}</span>
+      <span style={{ fontWeight: 600, color: "var(--accent)" }}>
+        {value}
+      </span>
     </div>
   );
 }
