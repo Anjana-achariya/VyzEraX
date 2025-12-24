@@ -1,4 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 import {
   Chart as ChartJS,
   BarElement,
@@ -10,16 +13,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar, Line, Pie } from "react-chartjs-2";
-import { Scatter, Bubble } from "react-chartjs-2";
+import { Bar, Line, Pie, Scatter, Bubble } from "react-chartjs-2";
 import { Line as LineChart } from "react-chartjs-2";
-
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
-
-ChartJS.register(TreemapController, TreemapElement);
-
-
-
 
 import {
   DashboardThemeProvider,
@@ -28,7 +24,11 @@ import {
 
 import DashboardThemeSwitcher from "../components/dashboard/DashboardThemeSwitcher";
 
+/* ───────────────── ChartJS setup (UNCHANGED) ───────────────── */
+
 ChartJS.register(
+  TreemapController,
+  TreemapElement,
   BarElement,
   LineElement,
   PointElement,
@@ -45,12 +45,80 @@ export default function Dashboard() {
   return (
     <DashboardThemeProvider>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        <DashboardThemeSwitcher />
+        {/* LEFT PANEL */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <DashboardThemeSwitcher />
+
+          {/* ✅ ONLY ADDITION */}
+          <ExportButtons />
+        </div>
+
+        {/* RIGHT PANEL (UNCHANGED) */}
         <DashboardCanvas />
       </div>
     </DashboardThemeProvider>
   );
 }
+
+/* ───────────────── Export Buttons (NEW, ISOLATED) ───────────────── */
+
+function ExportButtons() {
+  const handleExport = async (type) => {
+    const element = document.getElementById("dashboard-export");
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    if (type === "image") {
+      const img = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = img;
+      a.download = "dashboard.png";
+      a.click();
+    } else {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, w, h);
+      pdf.save("dashboard.pdf");
+    }
+  };
+
+  return (
+    <div
+      style={{
+        padding: "10px",
+        borderRadius: "12px",
+        border: "1px solid rgba(0,0,0,0.15)",
+        background: "#fff",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "8px",
+      }}
+    >
+      <button style={exportBtn} onClick={() => handleExport("pdf")}>
+        Export PDF
+      </button>
+      <button style={exportBtn} onClick={() => handleExport("image")}>
+        Export Image
+      </button>
+    </div>
+  );
+}
+
+const exportBtn = {
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "1px solid rgba(0,0,0,0.25)",
+  background: "white",
+  cursor: "pointer",
+  fontSize: "13px",
+  fontWeight: 400,
+};
 
 /* ───────────────── Dashboard Canvas ───────────────── */
 
@@ -729,3 +797,4 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
