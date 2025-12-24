@@ -1,15 +1,4 @@
-// import { NavLink } from "react-router-dom";
 
-// export default function Sidebar() {
-//   return (
-//     <div className="sidebar">
-//       <NavLink to="/">Home</NavLink>
-//       <NavLink to="/dashboard">Dashboard</NavLink>
-//       <NavLink to="/summarize">Summarize</NavLink>
-//       <NavLink to="/export">Export</NavLink>
-//     </div>
-//   );
-// }
 import { NavLink } from "react-router-dom";
 
 export default function Sidebar() {
@@ -29,7 +18,7 @@ export default function Sidebar() {
         <SidebarItem to="/dashboard" label="Dashboard" />
 
         <SidebarItem to="/summarize" label="Summarize" />
-        <SidebarItem to="/export" label="Export" />
+        {/* <SidebarItem to="/export" label="Export" /> */}
       </nav>
     </aside>
   );
@@ -54,3 +43,4 @@ function SidebarItem({ to, label }) {
     </NavLink>
   );
 }
+
