@@ -42,27 +42,7 @@ ChartJS.register(
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  return (
-    <DashboardThemeProvider>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        {/* LEFT PANEL */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <DashboardThemeSwitcher />
-
-          {/* ✅ ONLY ADDITION */}
-          <ExportButtons />
-        </div>
-
-        {/* RIGHT PANEL (UNCHANGED) */}
-        <DashboardCanvas />
-      </div>
-    </DashboardThemeProvider>
-  );
-}
-
-/* ───────────────── Export Buttons (NEW, ISOLATED) ───────────────── */
-
-function ExportButtons() {
+  /* ✅ EXPORT HANDLER (ONLY NEW LOGIC) */
   const handleExport = async (type) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
@@ -73,51 +53,74 @@ function ExportButtons() {
       backgroundColor: null,
     });
 
+    const imgData = canvas.toDataURL("image/png");
+
     if (type === "image") {
-      const img = canvas.toDataURL("image/png");
       const a = document.createElement("a");
-      a.href = img;
+      a.href = imgData;
       a.download = "dashboard.png";
       a.click();
     } else {
       const pdf = new jsPDF("p", "mm", "a4");
       const w = pdf.internal.pageSize.getWidth();
       const h = (canvas.height * w) / canvas.width;
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, w, h);
+      pdf.addImage(imgData, "PNG", 0, 0, w, h);
       pdf.save("dashboard.pdf");
     }
   };
 
   return (
-    <div
-      style={{
-        padding: "10px",
-        borderRadius: "12px",
-        border: "1px solid rgba(0,0,0,0.15)",
-        background: "#fff",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "8px",
-      }}
-    >
-      <button style={exportBtn} onClick={() => handleExport("pdf")}>
-        Export PDF
-      </button>
-      <button style={exportBtn} onClick={() => handleExport("image")}>
-        Export Image
-      </button>
-    </div>
+    <DashboardThemeProvider>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
+        {/* LEFT PANEL (UNCHANGED STRUCTURE) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <DashboardThemeSwitcher />
+
+          {/* ✅ EXPORT UI — SAME LOOK AS THEME SELECTORS */}
+          <div
+            style={{
+              background: "#ff8fab",
+              padding: "12px 16px",
+              borderRadius: "16px",
+              display: "flex",
+              gap: "12px",
+              alignItems: "center",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            }}
+          >
+            <button
+              style={themeLikeBtn}
+              onClick={() => handleExport("pdf")}
+            >
+              Export PDF
+            </button>
+            <button
+              style={themeLikeBtn}
+              onClick={() => handleExport("image")}
+            >
+              Export Image
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL — DASHBOARD (100% UNCHANGED) */}
+        <DashboardCanvas />
+      </div>
+    </DashboardThemeProvider>
   );
 }
 
-const exportBtn = {
-  padding: "8px 12px",
-  borderRadius: "8px",
+/* ───────────────── Button Style (MATCHES THEME SELECTS) ───────────────── */
+
+const themeLikeBtn = {
+  padding: "6px 12px",
+  borderRadius: "10px",
   border: "1px solid rgba(0,0,0,0.25)",
   background: "white",
-  cursor: "pointer",
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 400,
+  cursor: "pointer",
+  minHeight: "36px",
 };
 
 /* ───────────────── Dashboard Canvas ───────────────── */
@@ -797,4 +800,5 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
