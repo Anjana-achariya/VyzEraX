@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-// import html2canvas from "html2canvas";
+import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 import {
   SummarizeThemeProvider,
   useSummarizeTheme,
 } from "../context/SummarizeThemeContext";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const LEFT_OFFSET = 20;
+
+/* ───────────────── Main Wrapper ───────────────── */
 
 export default function Summarize() {
   return (
@@ -16,6 +19,8 @@ export default function Summarize() {
     </SummarizeThemeProvider>
   );
 }
+
+/* ───────────────── Content ───────────────── */
 
 function SummarizeContent() {
   const { theme, setMode, setAccent } = useSummarizeTheme();
@@ -36,7 +41,7 @@ function SummarizeContent() {
     if (name) setFileName(name);
   }, []);
 
-  /* ───── Call LLM insights once profile exists ───── */
+  /* ───── Fetch AI insights ───── */
   useEffect(() => {
     if (!profile) return;
 
@@ -46,42 +51,12 @@ function SummarizeContent() {
       return;
     }
 
-//   useEffect(() => {
-//   const handler = async (e) => {
-//     if (e.detail.target !== "summary") return;
-
-//     const element = document.getElementById("summary-export");
-//     if (!element) return;
-
-//     const canvas = await html2canvas(element, { scale: 2 });
-//     const imgData = canvas.toDataURL("image/png");
-
-//     if (e.detail.format === "image") {
-//       const a = document.createElement("a");
-//       a.href = imgData;
-//       a.download = "summary-export.png";
-//       a.click();
-//     } else {
-//       const pdf = new jsPDF("p", "mm", "a4");
-//       const w = pdf.internal.pageSize.getWidth();
-//       const h = (canvas.height * w) / canvas.width;
-//       pdf.addImage(imgData, "PNG", 0, 0, w, h);
-//       pdf.save("summary-export.pdf");
-//     }
-//   };
-
-//   window.addEventListener("APP_EXPORT", handler);
-//   return () => window.removeEventListener("APP_EXPORT", handler);
-// }, []);
-
-
     const fetchInsights = async () => {
       try {
         setLoadingLLM(true);
         setLlmError("");
 
-         const res = await fetch(`${API_BASE_URL}/api/llm-insights`, {
-
+        const res = await fetch(`${API_BASE_URL}/api/llm-insights`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profile),
@@ -90,7 +65,6 @@ function SummarizeContent() {
         if (!res.ok) throw new Error("LLM request failed");
 
         const data = await res.json();
-
         setLlmData(data);
         sessionStorage.setItem("llmInsights", JSON.stringify(data));
       } catch (err) {
@@ -103,7 +77,29 @@ function SummarizeContent() {
     fetchInsights();
   }, [profile]);
 
-  /* ───── NEW: Regenerate Insights ───── */
+  /* ───── Export Handler (LOCAL) ───── */
+  const handleExport = async (format) => {
+    const element = document.getElementById("summary-export");
+    if (!element) return;
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    if (format === "image") {
+      const a = document.createElement("a");
+      a.href = imgData;
+      a.download = "summary.png";
+      a.click();
+    } else {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, w, h);
+      pdf.save("summary.pdf");
+    }
+  };
+
+  /* ───── Regenerate Insights ───── */
   const regenerateInsights = async () => {
     if (!profile) return;
 
@@ -123,7 +119,6 @@ function SummarizeContent() {
       if (!res.ok) throw new Error("LLM request failed");
 
       const data = await res.json();
-
       setLlmData(data);
       sessionStorage.setItem("llmInsights", JSON.stringify(data));
     } catch (err) {
@@ -154,7 +149,7 @@ function SummarizeContent() {
 
   return (
     <div style={{ padding: "24px 32px 40px", minHeight: "100vh" }}>
-      {/* ───── Theme Controls ───── */}
+      {/* ───── Theme + Export Controls ───── */}
       <div
         style={{
           display: "flex",
@@ -193,10 +188,18 @@ function SummarizeContent() {
             <option value="coral-violet">Coral Violet</option>
             <option value="coral-blue">Coral Blue</option>
           </select>
+
+          <button onClick={() => handleExport("pdf")} style={exportBtn}>
+            Export PDF
+          </button>
+
+          <button onClick={() => handleExport("image")} style={exportBtn}>
+            Export Image
+          </button>
         </div>
       </div>
 
-      {/* ───── Report Container ───── */}
+      {/* ───── Summary Report ───── */}
       <div
         id="summary-export"
         style={{
@@ -206,7 +209,6 @@ function SummarizeContent() {
           border: `1px solid ${theme.colors.border}`,
           borderRadius: "20px",
           padding: "36px 48px 44px",
-          width: "100%",
           maxWidth: "1500px",
           minWidth: "1100px",
           margin: "0 auto",
@@ -217,40 +219,18 @@ function SummarizeContent() {
           DATA SUMMARY REPORT
         </h1>
 
-        <p
-          style={{
-            opacity: 0.75,
-            marginBottom: "22px",
-            paddingLeft: LEFT_OFFSET,
-          }}
-        >
+        <p style={{ opacity: 0.75, marginBottom: "22px", paddingLeft: LEFT_OFFSET }}>
           {fileName}
         </p>
 
-        <div style={{ marginBottom: "32px", paddingLeft: LEFT_OFFSET }}>
+        <Section title="Overview">
           <Insight label="Rows" value={rows.toLocaleString()} />
           <Insight label="Columns" value={columns} />
-          <Insight
-            label="Missing Values"
-            value={missingCount.toLocaleString()}
-          />
+          <Insight label="Missing Values" value={missingCount.toLocaleString()} />
           <Insight label="Duplicates" value={duplicates} />
-        </div>
-
-        <Section title="Executive Summary">
-          <Insight label="Numeric Columns" value={column_summary.numeric.length} />
-          <Insight
-            label="Categorical Columns"
-            value={column_summary.categorical.length}
-          />
-          <Insight
-            label="Datetime Columns"
-            value={column_summary.datetime.length}
-          />
-          <Insight label="Text Columns" value={column_summary.text.length} />
         </Section>
 
-        <Section title="Data Quality Assessment">
+        <Section title="Data Quality">
           <Insight
             label="Columns with Missing Data"
             value={Object.keys(missing_values).length}
@@ -261,73 +241,16 @@ function SummarizeContent() {
           />
         </Section>
 
-        <Section title="Exploratory Data Analysis">
-          {Object.keys(numeric_stats)
-            .slice(0, 6)
-            .map((col) => (
-              <Insight
-                key={col}
-                label={col}
-                value={`min ${numeric_stats[col].min}, max ${numeric_stats[col].max}`}
-              />
-            ))}
-        </Section>
-
-        {/* ───── NEW: Regenerate Button ───── */}
-        {llmData && (
-          <div
-            style={{
-              paddingLeft: LEFT_OFFSET,
-              marginTop: "32px",
-              marginBottom: "8px",
-            }}
-          >
-            <button
-              onClick={regenerateInsights}
-              disabled={loadingLLM}
-              style={{
-                background: "transparent",
-                border: "1px solid var(--accent)",
-                color: "var(--accent)",
-                padding: "6px 14px",
-                borderRadius: "8px",
-                cursor: loadingLLM ? "not-allowed" : "pointer",
-                fontSize: "13px",
-                fontWeight: 600,
-              }}
-            >
-              {loadingLLM ? "Regenerating…" : "Regenerate Insights"}
-            </button>
-          </div>
-        )}
-
-        {/* ───── AI INSIGHTS ───── */}
         {loadingLLM && (
           <Section title="AI Insights">
-            <div style={{ paddingLeft: LEFT_OFFSET }}>
-              Generating insights…
-            </div>
+            <div style={{ paddingLeft: LEFT_OFFSET }}>Generating insights…</div>
           </Section>
         )}
 
         {llmData?.insights && (
           <Section title="AI Insights">
-            {llmData.insights.map((text, idx) => (
-              <Insight key={idx} label={`Insight ${idx + 1}`} value={text} />
-            ))}
-          </Section>
-        )}
-
-        {llmData?.conclusion && (
-          <Section title="Conclusion & Next Steps">
-            <Insight label="Summary" value={llmData.conclusion.summary} />
-
-            {llmData.conclusion.data_preparation.map((v, i) => (
-              <Insight key={i} label="Data Preparation" value={v} />
-            ))}
-
-            {llmData.conclusion.modeling.map((v, i) => (
-              <Insight key={i} label="Modeling Approach" value={v} />
+            {llmData.insights.map((text, i) => (
+              <Insight key={i} label={`Insight ${i + 1}`} value={text} />
             ))}
           </Section>
         )}
@@ -339,12 +262,30 @@ function SummarizeContent() {
             </div>
           </Section>
         )}
+
+        {llmData && (
+          <div style={{ paddingLeft: LEFT_OFFSET, marginTop: "24px" }}>
+            <button
+              onClick={regenerateInsights}
+              disabled={loadingLLM}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--accent)",
+                color: "var(--accent)",
+                padding: "6px 14px",
+                borderRadius: "8px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Regenerate Insights
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
 
 /* ───────────────── Components ───────────────── */
 
@@ -371,16 +312,13 @@ function Insight({ label, value }) {
       style={{
         display: "grid",
         gridTemplateColumns: "200px 12px auto",
-        alignItems: "center",
         marginBottom: "8px",
         fontSize: "14px",
       }}
     >
       <span style={{ opacity: 0.85 }}>{label}</span>
       <span style={{ opacity: 0.6, textAlign: "center" }}>:</span>
-      <span style={{ fontWeight: 600, color: "var(--accent)" }}>
-        {value}
-      </span>
+      <span style={{ fontWeight: 600, color: "var(--accent)" }}>{value}</span>
     </div>
   );
 }
@@ -389,11 +327,15 @@ const selectStyle = {
   padding: "6px 10px",
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
-  fontSize: "14px",
-  cursor: "pointer",
   background: "white",
+  cursor: "pointer",
 };
 
-
-
-
+const exportBtn = {
+  padding: "6px 14px",
+  borderRadius: "8px",
+  border: "1px solid rgba(0,0,0,0.3)",
+  background: "white",
+  cursor: "pointer",
+  fontWeight: 600,
+};
