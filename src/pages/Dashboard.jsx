@@ -123,8 +123,9 @@ export default function Dashboard() {
 //   cursor: "pointer",
 //   minHeight: "32px",
 // };
+
 const themeLikeBtn = {
-  height: "32px",           // ⭐ FIXED
+  height: "32px",
   padding: "0 12px",
   borderRadius: "10px",
   border: "1px solid rgba(0,0,0,0.25)",
@@ -132,7 +133,6 @@ const themeLikeBtn = {
   fontSize: "14px",
   fontWeight: 400,
   cursor: "pointer",
-  lineHeight: "32px",
 };
 
 /* ───────────────── Dashboard Canvas ───────────────── */
@@ -812,6 +812,7 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
 
