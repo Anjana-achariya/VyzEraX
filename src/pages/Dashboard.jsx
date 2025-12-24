@@ -24,7 +24,7 @@ import {
 
 import DashboardThemeSwitcher from "../components/dashboard/DashboardThemeSwitcher";
 
-/* ───────────────── ChartJS setup ───────────────── */
+/* ───────────────── ChartJS setup (UNCHANGED) ───────────────── */
 
 ChartJS.register(
   TreemapController,
@@ -42,7 +42,26 @@ ChartJS.register(
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  const handleExport = async () => {
+  return (
+    <DashboardThemeProvider>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
+        {/* LEFT COLUMN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <DashboardThemeSwitcher />
+          <ExportButtons /> {/* ✅ ONLY ADDITION */}
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <DashboardCanvas /> {/* 🔒 UNTOUCHED */}
+      </div>
+    </DashboardThemeProvider>
+  );
+}
+
+/* ───────────────── Export Buttons (NEW, ISOLATED) ───────────────── */
+
+function ExportButtons() {
+  const handleExport = async (type) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
 
@@ -52,35 +71,51 @@ export default function Dashboard() {
       backgroundColor: null,
     });
 
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-    const w = pdf.internal.pageSize.getWidth();
-    const h = (canvas.height * w) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, w, h);
-    pdf.save("dashboard.pdf");
+    if (type === "image") {
+      const img = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = img;
+      a.download = "dashboard.png";
+      a.click();
+    } else {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, w, h);
+      pdf.save("dashboard.pdf");
+    }
   };
 
   return (
-    <DashboardThemeProvider>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        {/* LEFT COLUMN */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <DashboardThemeSwitcher />
-
-          {/* ✅ Export button SAME STYLE, BELOW theme */}
-          <button onClick={handleExport} style={sideButton}>
-            Export Dashboard
-          </button>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <DashboardCanvas />
-      </div>
-    </DashboardThemeProvider>
+    <div
+      style={{
+        padding: "12px",
+        borderRadius: "14px",
+        border: "1px solid rgba(0,0,0,0.15)",
+        background: "#fff",
+        display: "flex",
+        gap: "10px",
+      }}
+    >
+      <button style={sideBtn} onClick={() => handleExport("pdf")}>
+        Export PDF
+      </button>
+      <button style={sideBtn} onClick={() => handleExport("image")}>
+        Export Image
+      </button>
+    </div>
   );
 }
+
+const sideBtn = {
+  padding: "8px 14px",
+  borderRadius: "10px",
+  border: "1px solid rgba(0,0,0,0.25)",
+  background: "white",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: 400,
+};
 
 /* ───────────────── Dashboard Canvas (UNCHANGED) ───────────────── */
 
@@ -210,3 +245,4 @@ const sideButton = {
   cursor: "pointer",
   fontSize: "14px",
 };
+
