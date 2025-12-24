@@ -78,16 +78,17 @@ export default function Dashboard() {
 
           {/* ✅ EXPORT UI — SAME LOOK AS THEME SELECTORS */}
           <div
-            style={{
-              background: "#ff8fab",
-              padding: "12px 16px",
-              borderRadius: "16px",
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-            }}
-          >
+  style={{
+    background: "#ff8fab",
+    padding: "8px 12px",     // ⭐ FIXED
+    borderRadius: "16px",
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+  }}
+>
+
             <button
               style={themeLikeBtn}
               onClick={() => handleExport("pdf")}
@@ -112,15 +113,26 @@ export default function Dashboard() {
 
 /* ───────────────── Button Style (MATCHES THEME SELECTS) ───────────────── */
 
+// const themeLikeBtn = {
+//   padding: "6px 12px",
+//   borderRadius: "10px",
+//   border: "1px solid rgba(0,0,0,0.25)",
+//   background: "white",
+//   fontSize: "14px",
+//   fontWeight: 400,
+//   cursor: "pointer",
+//   minHeight: "32px",
+// };
 const themeLikeBtn = {
-  padding: "6px 12px",
+  height: "32px",           // ⭐ FIXED
+  padding: "0 12px",
   borderRadius: "10px",
   border: "1px solid rgba(0,0,0,0.25)",
   background: "white",
   fontSize: "14px",
   fontWeight: 400,
   cursor: "pointer",
-  minHeight: "36px",
+  lineHeight: "32px",
 };
 
 /* ───────────────── Dashboard Canvas ───────────────── */
@@ -800,5 +812,6 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
