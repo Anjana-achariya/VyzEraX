@@ -39,10 +39,32 @@ ChartJS.register(
   Legend
 );
 
+/* ───────────────── SHARED UI STYLES (SOURCE OF TRUTH) ───────────────── */
+
+const pillWrapperStyle = {
+  background: "#ff8fab",
+  padding: "12px 16px",
+  borderRadius: "16px",
+  display: "flex",
+  gap: "12px",
+  alignItems: "center",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+};
+
+const pillSelectStyle = {
+  height: "32px",
+  padding: "0 12px",
+  borderRadius: "8px",
+  border: "1px solid rgba(0,0,0,0.25)",
+  background: "white",
+  fontSize: "14px",
+  cursor: "pointer",
+};
+
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  /* ✅ EXPORT HANDLER (ONLY NEW LOGIC) */
+  /* ─── EXPORT HANDLER (LOGIC ONLY) ─── */
   const handleExport = async (type) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
@@ -72,50 +94,40 @@ export default function Dashboard() {
   return (
     <DashboardThemeProvider>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        {/* LEFT PANEL (UNCHANGED STRUCTURE) */}
+        {/* LEFT PANEL */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Theme Switcher (UNCHANGED COMPONENT) */}
           <DashboardThemeSwitcher />
 
-          {/* ✅ EXPORT UI — SAME LOOK AS THEME SELECTORS */}
-          <div
-  style={{
-    background: "#ff8fab",
-    padding: "6px 10px",     // ⭐ FIXED
-    borderRadius: "16px",
-    display: "flex",
-    gap: "12px",
-    alignItems: "center",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-  }}
->
-<select
-  style={themeLikeSelect}
-  defaultValue=""
-  onChange={(e) => {
-    if (e.target.value) handleExport(e.target.value);
-    e.target.value = "";
-  }}
->
-  <option value="" disabled>
-    Export PDF
-  </option>
-  <option value="pdf">Export PDF</option>
-</select>
+          {/* EXPORT — EXACT SAME UI AS THEME SWITCHER */}
+          <div style={pillWrapperStyle}>
+            <select
+              style={pillSelectStyle}
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) handleExport(e.target.value);
+                e.target.value = "";
+              }}
+            >
+              <option value="" disabled>
+                Export PDF
+              </option>
+              <option value="pdf">Export PDF</option>
+            </select>
 
-<select
-  style={themeLikeSelect}
-  defaultValue=""
-  onChange={(e) => {
-    if (e.target.value) handleExport(e.target.value);
-    e.target.value = "";
-  }}
->
-  <option value="" disabled>
-    Export Image
-  </option>
-  <option value="image">Export Image</option>
-</select>
-
+            <select
+              style={pillSelectStyle}
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) handleExport(e.target.value);
+                e.target.value = "";
+              }}
+            >
+              <option value="" disabled>
+                Export Image
+              </option>
+              <option value="image">Export Image</option>
+            </select>
           </div>
         </div>
 
@@ -125,30 +137,6 @@ export default function Dashboard() {
     </DashboardThemeProvider>
   );
 }
-
-/* ───────────────── Button Style (MATCHES THEME SELECTS) ───────────────── */
-
-// const themeLikeBtn = {
-//   padding: "6px 12px",
-//   borderRadius: "10px",
-//   border: "1px solid rgba(0,0,0,0.25)",
-//   background: "white",
-//   fontSize: "14px",
-//   fontWeight: 400,
-//   cursor: "pointer",
-//   minHeight: "32px",
-// };
-
-const themeLikeSelect = {
-  height: "32px",
-  padding: "0 12px",
-  borderRadius: "10px",
-  border: "1px solid rgba(0,0,0,0.25)",
-  background: "white",
-  fontSize: "14px",
-  cursor: "pointer",
-};
-
 
 /* ───────────────── Dashboard Canvas ───────────────── */
 
@@ -827,6 +815,7 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
 
