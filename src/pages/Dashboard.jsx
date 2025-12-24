@@ -100,36 +100,38 @@ export default function Dashboard() {
           <DashboardThemeSwitcher />
 
           {/* EXPORT — EXACT SAME UI AS THEME SWITCHER */}
-          <div style={pillWrapperStyle}>
-            <select
-              style={pillSelectStyle}
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) handleExport(e.target.value);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>
-                Export PDF
-              </option>
-              <option value="pdf">Export PDF</option>
-            </select>
+       <div style={{ marginLeft: "24px", marginTop: "8px" }}>
+  <div style={pillWrapperStyle}>
+    <select
+      style={pillSelectStyle}
+      defaultValue=""
+      onChange={(e) => {
+        if (e.target.value) handleExport(e.target.value);
+        e.target.value = "";
+      }}
+    >
+      <option value="" disabled>
+        Export PDF
+      </option>
+      <option value="pdf">Export PDF</option>
+    </select>
 
-            <select
-              style={pillSelectStyle}
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) handleExport(e.target.value);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>
-                Export Image
-              </option>
-              <option value="image">Export Image</option>
-            </select>
-          </div>
-        </div>
+    <select
+      style={pillSelectStyle}
+      defaultValue=""
+      onChange={(e) => {
+        if (e.target.value) handleExport(e.target.value);
+        e.target.value = "";
+      }}
+    >
+      <option value="" disabled>
+        Export Image
+      </option>
+      <option value="image">Export Image</option>
+    </select>
+  </div>
+</div>
+
 
         {/* RIGHT PANEL — DASHBOARD (100% UNCHANGED) */}
         <DashboardCanvas />
@@ -815,6 +817,7 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
 
