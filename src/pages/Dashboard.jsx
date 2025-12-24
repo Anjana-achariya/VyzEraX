@@ -116,7 +116,6 @@ const sideBtn = {
   fontSize: "14px",
   fontWeight: 400,
 };
-
 /* ───────────────── Dashboard Canvas (UNCHANGED) ───────────────── */
 
 function DashboardCanvas() {
@@ -245,4 +244,5 @@ const sideButton = {
   cursor: "pointer",
   fontSize: "14px",
 };
+
 
