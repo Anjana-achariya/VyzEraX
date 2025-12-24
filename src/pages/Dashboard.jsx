@@ -38,22 +38,7 @@ ChartJS.register(
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  return (
-    <DashboardThemeProvider>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        <DashboardThemeSwitcher />
-        <DashboardCanvas />
-      </div>
-    </DashboardThemeProvider>
-  );
-}
-
-/* ───────────────── Dashboard Canvas ───────────────── */
-
-function DashboardCanvas() {
-  const { theme } = useDashboardTheme();
-
-  /* ───── Export Handler ───── */
+  /* ───── EXPORT HANDLER (PARENT LEVEL) ───── */
   const handleExport = async (format) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
@@ -80,6 +65,37 @@ function DashboardCanvas() {
     }
   };
 
+  return (
+    <DashboardThemeProvider>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
+        {/* Sidebar */}
+        <DashboardThemeSwitcher />
+
+        {/* Main content area */}
+        <div style={{ flex: 1 }}>
+          {/* ✅ EXPORT BUTTONS (OUTSIDE DASHBOARD) */}
+          <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+            <button onClick={() => handleExport("pdf")} style={exportBtn}>
+              Export PDF
+            </button>
+            <button onClick={() => handleExport("image")} style={exportBtn}>
+              Export Image
+            </button>
+          </div>
+
+          {/* ✅ DASHBOARD CONTENT */}
+          <DashboardCanvas />
+        </div>
+      </div>
+    </DashboardThemeProvider>
+  );
+}
+
+/* ───────────────── Dashboard Canvas ───────────────── */
+
+function DashboardCanvas() {
+  const { theme } = useDashboardTheme();
+
   /* ───── Data ───── */
   const stored = sessionStorage.getItem("analysisResult");
   const data = stored ? JSON.parse(stored) : null;
@@ -98,12 +114,12 @@ function DashboardCanvas() {
     value: numericStats[col].mean,
   }));
 
-  /* ───── Chart States ───── */
+  /* ───── Chart 1 State ───── */
   const [selectedColumn, setSelectedColumn] = useState("");
   const [chartType, setChartType] = useState("Histogram");
 
   useEffect(() => {
-    if (!selectedColumn && numericColumns.length) {
+    if (!selectedColumn && numericColumns.length > 0) {
       setSelectedColumn(numericColumns[0]);
     }
   }, [numericColumns, selectedColumn]);
@@ -116,14 +132,26 @@ function DashboardCanvas() {
     const bins = 10;
     const min = Math.floor(stats.min);
     const max = Math.ceil(stats.max);
-    const step = Math.max(1, Math.ceil((max - min) / bins));
+    const range = Math.max(1, max - min);
+    const step = Math.ceil(range / bins);
 
     const labels = [];
     const counts = [];
 
     for (let i = 0; i < bins; i++) {
-      labels.push(`${min + i * step}`);
-      counts.push(Math.round(stats.mean));
+      const start = min + i * step;
+      const end = start + step;
+      labels.push(`${start}–${end}`);
+
+      const center = stats.mean;
+      const distance = Math.abs((start + end) / 2 - center);
+
+      counts.push(
+        Math.max(
+          1,
+          Math.round((stats.std || 1) * bins / (distance + 1))
+        )
+      );
     }
 
     return { labels, counts };
@@ -140,24 +168,13 @@ function DashboardCanvas() {
         padding: "32px",
         borderRadius: "20px",
         minHeight: "80vh",
-        flex: 1,
       }}
     >
-      <h1 style={{ fontSize: "28px", marginBottom: "8px" }}>
+      <h1 style={{ fontSize: "28px", marginBottom: "24px" }}>
         {fileName} DASHBOARD
       </h1>
 
-      {/* ✅ Export buttons BELOW theme */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-        <button onClick={() => handleExport("pdf")} style={exportBtn}>
-          Export PDF
-        </button>
-        <button onClick={() => handleExport("image")} style={exportBtn}>
-          Export Image
-        </button>
-      </div>
-
-      {/* KPI Row */}
+      {/* KPI ROW */}
       <div
         style={{
           display: "grid",
@@ -168,15 +185,21 @@ function DashboardCanvas() {
       >
         {kpis.map((kpi, i) => (
           <DashboardCard key={i}>
-            <p style={{ opacity: 0.7 }}>{kpi.label}</p>
-            <h3 style={{ color: theme.colors.accent }}>
-              {kpi.value.toFixed(2)}
+            <p style={{ fontSize: "14px", opacity: 0.7 }}>{kpi.label}</p>
+            <h3
+              style={{
+                fontSize: "22px",
+                marginTop: "8px",
+                color: theme.colors.accent,
+              }}
+            >
+              {formatValue(kpi.value)}
             </h3>
           </DashboardCard>
         ))}
       </div>
 
-      {/* Chart */}
+      {/* SAMPLE CHART (YOUR OTHERS CAN FOLLOW SAME PATTERN) */}
       <DashboardCard height="280px">
         <Bar
           data={{
@@ -185,6 +208,7 @@ function DashboardCanvas() {
               {
                 data: histogram.counts,
                 backgroundColor: theme.colors.accent,
+                borderRadius: 6,
               },
             ],
           }}
@@ -221,5 +245,12 @@ const exportBtn = {
   border: "1px solid rgba(0,0,0,0.3)",
   background: "transparent",
   cursor: "pointer",
-  fontWeight: 400, // ✅ NORMAL (not bold)
+  fontWeight: 400, // normal text
 };
+
+function formatValue(v) {
+  if (typeof v !== "number") return v;
+  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
+  if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
+  return v.toFixed(2);
+}
