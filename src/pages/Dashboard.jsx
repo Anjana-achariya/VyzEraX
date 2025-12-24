@@ -88,19 +88,34 @@ export default function Dashboard() {
     boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
   }}
 >
+<select
+  style={themeLikeSelect}
+  defaultValue=""
+  onChange={(e) => {
+    if (e.target.value) handleExport(e.target.value);
+    e.target.value = "";
+  }}
+>
+  <option value="" disabled>
+    Export PDF
+  </option>
+  <option value="pdf">Export PDF</option>
+</select>
 
-            <button
-              style={themeLikeBtn}
-              onClick={() => handleExport("pdf")}
-            >
-              Export PDF
-            </button>
-            <button
-              style={themeLikeBtn}
-              onClick={() => handleExport("image")}
-            >
-              Export Image
-            </button>
+<select
+  style={themeLikeSelect}
+  defaultValue=""
+  onChange={(e) => {
+    if (e.target.value) handleExport(e.target.value);
+    e.target.value = "";
+  }}
+>
+  <option value="" disabled>
+    Export Image
+  </option>
+  <option value="image">Export Image</option>
+</select>
+
           </div>
         </div>
 
@@ -124,16 +139,16 @@ export default function Dashboard() {
 //   minHeight: "32px",
 // };
 
-const themeLikeBtn = {
-  height: "30px",
+const themeLikeSelect = {
+  height: "32px",
   padding: "0 12px",
   borderRadius: "10px",
   border: "1px solid rgba(0,0,0,0.25)",
   background: "white",
   fontSize: "14px",
-  fontWeight: 400,
   cursor: "pointer",
 };
+
 
 /* ───────────────── Dashboard Canvas ───────────────── */
 
@@ -812,6 +827,7 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
 
