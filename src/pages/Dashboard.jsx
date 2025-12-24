@@ -80,7 +80,7 @@ export default function Dashboard() {
           <div
   style={{
     background: "#ff8fab",
-    padding: "8px 12px",     // ⭐ FIXED
+    padding: "6px 10px",     // ⭐ FIXED
     borderRadius: "16px",
     display: "flex",
     gap: "12px",
@@ -125,7 +125,7 @@ export default function Dashboard() {
 // };
 
 const themeLikeBtn = {
-  height: "32px",
+  height: "30px",
   padding: "0 12px",
   borderRadius: "10px",
   border: "1px solid rgba(0,0,0,0.25)",
@@ -812,6 +812,7 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
 
