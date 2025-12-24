@@ -385,5 +385,6 @@ const exportBtn = {
   border: "1px solid rgba(0,0,0,0.3)",
   background: "white",
   cursor: "pointer",
-  fontWeight: 600,
+  fontWeight: 400,
 };
+
