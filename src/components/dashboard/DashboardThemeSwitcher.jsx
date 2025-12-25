@@ -49,8 +49,9 @@ export default function DashboardThemeSwitcher() {
 //   background: "white",
 // };
 const selectStyle = {
-  height: "32px",        // keep height consistent
-  padding: "6px 20px", 
+  width: "140px",          // ⭐ FIXED WIDTH
+  height: "32px",
+  padding: "6px 16px",
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
   fontSize: "14px",
@@ -58,4 +59,5 @@ const selectStyle = {
   background: "white",
   whiteSpace: "nowrap",
 };
+
 
