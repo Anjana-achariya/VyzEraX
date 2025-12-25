@@ -96,6 +96,7 @@ export default function Dashboard() {
   return (
     <DashboardThemeProvider>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
+        
         {/* LEFT PANEL */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <DashboardThemeSwitcher />
@@ -111,9 +112,7 @@ export default function Dashboard() {
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>
-                  Export PDF
-                </option>
+                <option value="" disabled>Export PDF</option>
                 <option value="pdf">Export PDF</option>
               </select>
 
@@ -125,17 +124,16 @@ export default function Dashboard() {
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>
-                  Export Image
-                </option>
+                <option value="" disabled>Export Image</option>
                 <option value="image">Export Image</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
+        
         <DashboardCanvas />
+
       </div>
     </DashboardThemeProvider>
   );
@@ -819,5 +817,6 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
