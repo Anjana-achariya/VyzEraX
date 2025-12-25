@@ -7,7 +7,7 @@ export default function DashboardThemeSwitcher() {
     <div style={{ marginLeft: "24px", marginTop: "8px" }}>
       <div
         style={{
-          background: "#ff8fab",
+          background: "#ffd1e1", // ✅ ONLY CHANGE: lighter than export pill
           padding: "12px 16px",
           borderRadius: "16px",
           display: "flex",
@@ -40,16 +40,8 @@ export default function DashboardThemeSwitcher() {
   );
 }
 
-// const selectStyle = {
-//   padding: "6px 10px",
-//   borderRadius: "8px",
-//   border: "1px solid rgba(0,0,0,0.25)",
-//   fontSize: "14px",
-//   cursor: "pointer",
-//   background: "white",
-// };
 const selectStyle = {
-  width: "140px",          // ⭐ FIXED WIDTH
+  width: "140px",
   height: "32px",
   padding: "6px 16px",
   borderRadius: "8px",
@@ -59,5 +51,3 @@ const selectStyle = {
   background: "white",
   whiteSpace: "nowrap",
 };
-
-
