@@ -63,4 +63,8 @@ body {
 .export-mode * {
   overflow: visible !important;
 }
+button {
+  appearance: none;
+  -webkit-appearance: none;
+}
 
