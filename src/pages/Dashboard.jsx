@@ -13,9 +13,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+
 import { Bar, Line, Pie, Scatter, Bubble } from "react-chartjs-2";
 import { Line as LineChart } from "react-chartjs-2";
-import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
 
 import {
   DashboardThemeProvider,
@@ -27,8 +27,6 @@ import DashboardThemeSwitcher from "../components/dashboard/DashboardThemeSwitch
 /* ───────────────── ChartJS setup ───────────────── */
 
 ChartJS.register(
-  TreemapController,
-  TreemapElement,
   BarElement,
   LineElement,
   PointElement,
@@ -39,7 +37,7 @@ ChartJS.register(
   Legend
 );
 
-/* ───────────────── SHARED UI STYLES (SOURCE OF TRUTH) ───────────────── */
+/* ───────────────── Shared UI Styles ───────────────── */
 
 const pillWrapperStyle = {
   background: "#ff8fab",
@@ -52,7 +50,7 @@ const pillWrapperStyle = {
 };
 
 const pillSelectStyle = {
-  width: "140px",          // ⭐ MUST MATCH
+  width: "140px",
   height: "32px",
   padding: "6px 16px",
   borderRadius: "8px",
@@ -66,7 +64,6 @@ const pillSelectStyle = {
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  /* ─── Export handler ─── */
   const handleExport = async (type) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
@@ -77,18 +74,18 @@ export default function Dashboard() {
       backgroundColor: null,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    const img = canvas.toDataURL("image/png");
 
     if (type === "image") {
       const a = document.createElement("a");
-      a.href = imgData;
+      a.href = img;
       a.download = "dashboard.png";
       a.click();
     } else {
       const pdf = new jsPDF("p", "mm", "a4");
       const w = pdf.internal.pageSize.getWidth();
       const h = (canvas.height * w) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, w, h);
+      pdf.addImage(img, "PNG", 0, 0, w, h);
       pdf.save("dashboard.pdf");
     }
   };
@@ -98,23 +95,19 @@ export default function Dashboard() {
       <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
         {/* LEFT PANEL */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {/* Theme Switcher */}
           <DashboardThemeSwitcher />
 
-          {/* Export — SAME UI AS THEME SWITCHER */}
           <div style={{ marginLeft: "24px", marginTop: "8px" }}>
             <div style={pillWrapperStyle}>
               <select
                 style={pillSelectStyle}
                 defaultValue=""
                 onChange={(e) => {
-                  if (e.target.value) handleExport(e.target.value);
+                  handleExport(e.target.value);
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>
-                  Export PDF
-                </option>
+                <option value="" disabled>Export PDF</option>
                 <option value="pdf">Export PDF</option>
               </select>
 
@@ -122,20 +115,18 @@ export default function Dashboard() {
                 style={pillSelectStyle}
                 defaultValue=""
                 onChange={(e) => {
-                  if (e.target.value) handleExport(e.target.value);
+                  handleExport(e.target.value);
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>
-                  Export Image
-                </option>
+                <option value="" disabled>Export Image</option>
                 <option value="image">Export Image</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL — DASHBOARD */}
+        {/* RIGHT PANEL */}
         <DashboardCanvas />
       </div>
     </DashboardThemeProvider>
@@ -147,119 +138,106 @@ export default function Dashboard() {
 function DashboardCanvas() {
   const { theme } = useDashboardTheme();
 
-  const stored = sessionStorage.getItem("analysisResult");
-  const data = stored ? JSON.parse(stored) : null;
-
-  const rawName =
-    sessionStorage.getItem("uploadedFileName") || "Dataset";
-  const fileName = rawName.replace(/\.(csv|xlsx)$/i, "").toUpperCase();
+  const data = JSON.parse(sessionStorage.getItem("analysisResult") || "{}");
+  const fileName =
+    (sessionStorage.getItem("uploadedFileName") || "Dataset")
+      .replace(/\.(csv|xlsx)$/i, "")
+      .toUpperCase();
 
   const numericStats = data?.profile?.numeric_stats || {};
-  const categoricalCols =
-    data?.profile?.column_summary?.categorical || [];
-  const categoricalValues =
-    data?.profile?.categorical_values || {};
+  const categoricalCols = data?.profile?.column_summary?.categorical || [];
+  const categoricalValues = data?.profile?.categorical_values || {};
+
   const numericColumns = Object.keys(numericStats);
 
-  /* ─── Chart states ─── */
-  const [selectedColumn, setSelectedColumn] = useState("");
-  const [chartType, setChartType] = useState("Histogram");
+  /* ───────── Chart 1 ───────── */
 
-  const [catColumn, setCatColumn] = useState("");
-  const [catChartType, setCatChartType] = useState("Bar");
+  const [numCol, setNumCol] = useState("");
+  const [numType, setNumType] = useState("Histogram");
+
+  useEffect(() => {
+    if (!numCol && numericColumns.length) setNumCol(numericColumns[0]);
+  }, [numericColumns, numCol]);
+
+  const histogram = useMemo(() => {
+    const values = numericStats[numCol]?.values;
+    if (!values?.length) return { labels: [], counts: [] };
+
+    const bins = 10;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const step = (max - min) / bins;
+
+    const counts = Array(bins).fill(0);
+    values.forEach(v => {
+      const i = Math.min(bins - 1, Math.floor((v - min) / step));
+      counts[i]++;
+    });
+
+    return {
+      labels: counts.map((_, i) =>
+        `${(min + i * step).toFixed(1)}`
+      ),
+      counts,
+    };
+  }, [numericStats, numCol]);
+
+  /* ───────── Chart 2 ───────── */
+
+  const [catCol, setCatCol] = useState("");
+  const [catType, setCatType] = useState("Bar");
+
+  useEffect(() => {
+    if (!catCol && categoricalCols.length) setCatCol(categoricalCols[0]);
+  }, [categoricalCols, catCol]);
+
+  const catData = useMemo(() => {
+    const obj = categoricalValues[catCol];
+    if (!obj) return { labels: [], counts: [] };
+
+    return {
+      labels: Object.keys(obj),
+      counts: Object.values(obj),
+    };
+  }, [categoricalValues, catCol]);
+
+  /* ───────── Chart 3 ───────── */
 
   const [xAxis, setXAxis] = useState("");
   const [yAxis, setYAxis] = useState("");
   const [scatterType, setScatterType] = useState("Scatter");
 
-  const [timeX, setTimeX] = useState("");
-  const [timeY, setTimeY] = useState("");
-  const [timeChartType, setTimeChartType] = useState("Line");
-
   useEffect(() => {
-    if (!selectedColumn && numericColumns.length)
-      setSelectedColumn(numericColumns[0]);
-    if (!catColumn && categoricalCols.length)
-      setCatColumn(categoricalCols[0]);
     if (numericColumns.length >= 2) {
       if (!xAxis) setXAxis(numericColumns[0]);
       if (!yAxis) setYAxis(numericColumns[1]);
-      if (!timeX) setTimeX(numericColumns[0]);
-      if (!timeY) setTimeY(numericColumns[1]);
     }
-  }, [numericColumns, categoricalCols]);
+  }, [numericColumns, xAxis, yAxis]);
 
-  /* ─── KPIs ─── */
-  const kpis = numericColumns.slice(0, 5).map((col) => ({
-    label: `${col} (Mean)`,
-    value: numericStats[col].mean,
-  }));
-
-  /* ─── Histogram ─── */
-  const histogram = useMemo(() => {
-    const stats = numericStats[selectedColumn];
-    if (!stats) return { labels: [], counts: [] };
-
-    const bins = 10;
-    const min = Math.floor(stats.min);
-    const max = Math.ceil(stats.max);
-    const step = Math.ceil(Math.max(1, max - min) / bins);
-
-    return {
-      labels: Array.from({ length: bins }, (_, i) => {
-        const s = min + i * step;
-        return `${s}–${s + step}`;
-      }),
-      counts: Array.from({ length: bins }, () =>
-        Math.max(1, Math.round(stats.mean))
-      ),
-    };
-  }, [numericStats, selectedColumn]);
-
-  /* ─── Categorical ─── */
-  const categoryDistribution = useMemo(() => {
-    const obj = categoricalValues[catColumn];
-    if (!obj) return { labels: [], counts: [] };
-    const entries = Object.entries(obj);
-    return {
-      labels: entries.map(([k]) => k),
-      counts: entries.map(([, v]) => v),
-    };
-  }, [categoricalValues, catColumn]);
-
-  /* ─── Scatter / Bubble ─── */
   const scatterData = useMemo(() => {
-    if (!xAxis || !yAxis) return [];
-    const xStats = numericStats[xAxis];
-    const yStats = numericStats[yAxis];
-    if (!xStats || !yStats) return [];
+    const x = numericStats[xAxis]?.values;
+    const y = numericStats[yAxis]?.values;
+    if (!x || !y) return [];
 
-    return Array.from({ length: 30 }, (_, i) => ({
-      x:
-        xStats.min +
-        (i / 29) * (xStats.max - xStats.min),
-      y:
-        yStats.mean +
-        (Math.random() - 0.5) * (yStats.std || 1),
-      r: scatterType === "Bubble" ? 6 + Math.random() * 10 : undefined,
+    return x.slice(0, y.length).map((v, i) => ({
+      x: v,
+      y: y[i],
+      r: scatterType === "Bubble" ? 6 : undefined,
     }));
   }, [numericStats, xAxis, yAxis, scatterType]);
 
-  /* ─── Trend ─── */
-  const timelineData = useMemo(() => {
-    if (!timeX || !timeY) return [];
-    const xStats = numericStats[timeX];
-    const yStats = numericStats[timeY];
-    if (!xStats || !yStats) return [];
+  /* ───────── Chart 4 ───────── */
 
-    return Array.from({ length: 12 }, (_, i) => ({
-      x: Math.round(
-        xStats.min + (i / 11) * (xStats.max - xStats.min)
-      ),
-      y:
-        yStats.min + (i / 11) * (yStats.max - yStats.min),
-    }));
-  }, [timeX, timeY, numericStats]);
+  const [trendType, setTrendType] = useState("Line");
+
+  const trendData = useMemo(() => {
+    if (!xAxis || !yAxis) return [];
+    const x = numericStats[xAxis]?.values || [];
+    const y = numericStats[yAxis]?.values || [];
+    return x.slice(0, y.length).map((v, i) => ({ x: v, y: y[i] }));
+  }, [numericStats, xAxis, yAxis]);
+
+  /* ───────── Render ───────── */
 
   return (
     <div
@@ -273,244 +251,93 @@ function DashboardCanvas() {
         flex: 1,
       }}
     >
-      <h1 style={{ fontSize: "28px", marginBottom: "24px" }}>
-        {fileName} DASHBOARD
-      </h1>
+      <h1 style={{ marginBottom: "24px" }}>{fileName} DASHBOARD</h1>
 
-      {/* KPI ROW */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "16px",
-          marginBottom: "32px",
-        }}
-      >
-        {kpis.map((kpi, i) => (
-          <DashboardCard key={i}>
-            <p style={{ opacity: 0.7 }}>{kpi.label}</p>
-            <h3 style={{ color: theme.colors.accent }}>
-              {formatValue(kpi.value)}
-            </h3>
-          </DashboardCard>
-        ))}
-      </div>
-
-      {/* CHART GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
         {/* Chart 1 */}
-        <DashboardCard height="280px">
-          <ChartHeader title={`${selectedColumn} Distribution`}>
-            <select
-              value={selectedColumn}
-              onChange={(e) => setSelectedColumn(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {numericColumns.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
+        <DashboardCard>
+          <ChartHeader title="NUMERIC DISTRIBUTION">
+            <select value={numCol} onChange={e => setNumCol(e.target.value)}>
+              {numericColumns.map(c => <option key={c}>{c}</option>)}
             </select>
-            <select
-              value={chartType}
-              onChange={(e) => setChartType(e.target.value)}
-              style={selectStyle(theme)}
-            >
+            <select value={numType} onChange={e => setNumType(e.target.value)}>
               <option>Histogram</option>
               <option>Bar</option>
               <option>Line</option>
             </select>
           </ChartHeader>
 
-          <Bar
-            data={{
-              labels: histogram.labels,
-              datasets: [
-                {
-                  data: histogram.counts,
-                  backgroundColor: theme.colors.accent,
-                },
-              ],
-            }}
-            options={chartOptions(theme)}
-          />
+          {numType !== "Line" ? (
+            <Bar data={{ labels: histogram.labels, datasets: [{ data: histogram.counts }] }} />
+          ) : (
+            <Line data={{ labels: histogram.labels, datasets: [{ data: histogram.counts }] }} />
+          )}
         </DashboardCard>
 
         {/* Chart 2 */}
-        <DashboardCard height="280px">
-          <ChartHeader title={`${catColumn} Distribution`}>
-            <select
-              value={catColumn}
-              onChange={(e) => setCatColumn(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {categoricalCols.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
+        <DashboardCard>
+          <ChartHeader title="CATEGORY DISTRIBUTION">
+            <select value={catCol} onChange={e => setCatCol(e.target.value)}>
+              {categoricalCols.map(c => <option key={c}>{c}</option>)}
             </select>
-            <select
-              value={catChartType}
-              onChange={(e) => setCatChartType(e.target.value)}
-              style={selectStyle(theme)}
-            >
+            <select value={catType} onChange={e => setCatType(e.target.value)}>
               <option>Bar</option>
               <option>Pie</option>
               <option>Donut</option>
             </select>
           </ChartHeader>
 
-          {catChartType === "Bar" ? (
-            <Bar
-              data={{
-                labels: categoryDistribution.labels,
-                datasets: [
-                  {
-                    data: categoryDistribution.counts,
-                    backgroundColor: theme.colors.accent,
-                  },
-                ],
-              }}
-              options={chartOptions(theme)}
-            />
+          {catType === "Bar" ? (
+            <Bar data={{ labels: catData.labels, datasets: [{ data: catData.counts }] }} />
           ) : (
             <Pie
               data={{
-                labels: categoryDistribution.labels,
-                datasets: [
-                  {
-                    data: categoryDistribution.counts,
-                    backgroundColor: generatePalette(
-                      theme.colors.accent,
-                      categoryDistribution.labels.length
-                    ),
-                  },
-                ],
+                labels: catData.labels,
+                datasets: [{
+                  data: catData.counts,
+                  cutout: catType === "Donut" ? "60%" : "0%",
+                }],
               }}
-              options={pieOptions}
+              options={{ plugins: { legend: { position: "bottom" } } }}
             />
           )}
         </DashboardCard>
 
         {/* Chart 3 */}
-        <DashboardCard height="260px">
-          <ChartHeader title="Relationship Analysis">
-            <select
-              value={xAxis}
-              onChange={(e) => setXAxis(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {numericColumns.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
+        <DashboardCard>
+          <ChartHeader title="RELATIONSHIP">
+            <select value={xAxis} onChange={e => setXAxis(e.target.value)}>
+              {numericColumns.map(c => <option key={c}>{c}</option>)}
             </select>
-            <select
-              value={yAxis}
-              onChange={(e) => setYAxis(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {numericColumns.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
+            <select value={yAxis} onChange={e => setYAxis(e.target.value)}>
+              {numericColumns.map(c => <option key={c}>{c}</option>)}
             </select>
-            <select
-              value={scatterType}
-              onChange={(e) => setScatterType(e.target.value)}
-              style={selectStyle(theme)}
-            >
+            <select value={scatterType} onChange={e => setScatterType(e.target.value)}>
               <option>Scatter</option>
               <option>Bubble</option>
             </select>
           </ChartHeader>
 
           {scatterType === "Bubble" ? (
-            <Bubble
-              data={{
-                datasets: [
-                  {
-                    data: scatterData,
-                    backgroundColor: theme.colors.accent,
-                  },
-                ],
-              }}
-              options={scatterOptions(xAxis, yAxis)}
-            />
+            <Bubble data={{ datasets: [{ data: scatterData }] }} />
           ) : (
-            <Scatter
-              data={{
-                datasets: [
-                  {
-                    data: scatterData,
-                    backgroundColor: theme.colors.accent,
-                  },
-                ],
-              }}
-              options={scatterOptions(xAxis, yAxis)}
-            />
+            <Scatter data={{ datasets: [{ data: scatterData }] }} />
           )}
         </DashboardCard>
 
         {/* Chart 4 */}
-        <DashboardCard height="260px">
-          <ChartHeader title="Trend Analysis">
-            <select
-              value={timeX}
-              onChange={(e) => setTimeX(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {numericColumns.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-            <select
-              value={timeY}
-              onChange={(e) => setTimeY(e.target.value)}
-              style={selectStyle(theme)}
-            >
-              {numericColumns.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-            <select
-              value={timeChartType}
-              onChange={(e) => setTimeChartType(e.target.value)}
-              style={selectStyle(theme)}
-            >
+        <DashboardCard>
+          <ChartHeader title="TREND">
+            <select value={trendType} onChange={e => setTrendType(e.target.value)}>
               <option>Line</option>
               <option>Column</option>
             </select>
           </ChartHeader>
 
-          {timeChartType === "Line" ? (
-            <LineChart
-              data={{
-                labels: timelineData.map((p) => p.x),
-                datasets: [
-                  {
-                    data: timelineData.map((p) => p.y),
-                    borderColor: theme.colors.accent,
-                  },
-                ],
-              }}
-              options={scatterOptions(timeX, timeY)}
-            />
+          {trendType === "Line" ? (
+            <LineChart data={{ datasets: [{ data: trendData }] }} />
           ) : (
-            <Bar
-              data={{
-                labels: timelineData.map((p) => p.x),
-                datasets: [
-                  {
-                    data: timelineData.map((p) => p.y),
-                    backgroundColor: theme.colors.accent,
-                  },
-                ],
-              }}
-              options={scatterOptions(timeX, timeY)}
-            />
+            <Bar data={{ labels: trendData.map(p => p.x), datasets: [{ data: trendData.map(p => p.y) }] }} />
           )}
         </DashboardCard>
       </div>
@@ -520,104 +347,26 @@ function DashboardCanvas() {
 
 /* ───────────────── Helpers ───────────────── */
 
-function ChartHeader({ title, children }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "8px",
-      }}
-    >
-      <p style={{ opacity: 0.7 }}>{title}</p>
-      <div style={{ display: "flex", gap: "8px" }}>{children}</div>
-    </div>
-  );
-}
-
-function DashboardCard({ children, height = "auto" }) {
+function DashboardCard({ children }) {
   const { theme } = useDashboardTheme();
   return (
-    <div
-      style={{
-        background: theme.colors.card,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: "14px",
-        padding: "16px",
-        height,
-      }}
-    >
+    <div style={{
+      background: theme.colors.card,
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: "14px",
+      padding: "16px",
+      height: "260px",
+    }}>
       {children}
     </div>
   );
 }
 
-const selectStyle = (theme) => ({
-  padding: "6px 10px",
-  borderRadius: "8px",
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.card,
-  color: theme.colors.text,
-  fontSize: "13px",
-  maxWidth: "130px",
-});
-
-const chartOptions = (theme) => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { display: false } },
-    y: { grid: { display: false }, ticks: { precision: 0 } },
-  },
-});
-
-const pieOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: "right",
-      labels: { boxWidth: 12, padding: 10 },
-    },
-  },
-};
-
-const scatterOptions = (xAxis, yAxis) => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { title: { display: true, text: xAxis }, grid: { display: false } },
-    y: { title: { display: true, text: yAxis }, grid: { display: false } },
-  },
-});
-
-function hexToRgb(hex) {
-  const clean = hex.replace("#", "");
-  const num = parseInt(clean, 16);
-  return {
-    r: (num >> 16) & 255,
-    g: (num >> 8) & 255,
-    b: num & 255,
-  };
+function ChartHeader({ title, children }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+      <p style={{ opacity: 0.7 }}>{title}</p>
+      <div style={{ display: "flex", gap: "8px" }}>{children}</div>
+    </div>
+  );
 }
-
-function generatePalette(baseColor, count) {
-  const { r, g, b } = hexToRgb(baseColor);
-  return Array.from({ length: count }, (_, i) => {
-    const alpha = Math.max(0.3, 1 - i * 0.08);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  });
-}
-
-function formatValue(v) {
-  if (typeof v !== "number") return v;
-  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
-  if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
-  return v.toFixed(2);
-}
-
-
-
