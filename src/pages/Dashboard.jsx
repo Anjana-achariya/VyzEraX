@@ -41,7 +41,7 @@ ChartJS.register(
   Legend
 );
 
-/* ───────────────── Export UI styles (SAME AS BEFORE) ───────────────── */
+/* ───────────────── Export UI styles ───────────────── */
 
 const pillWrapperStyle = {
   background: "#ff8fab",
@@ -62,13 +62,11 @@ const pillSelectStyle = {
   background: "white",
   fontSize: "14px",
   cursor: "pointer",
-  whiteSpace: "nowrap",
 };
 
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
-  /* ✅ EXPORT LOGIC (NEW, ISOLATED) */
   const handleExport = async (type) => {
     const element = document.getElementById("dashboard-export");
     if (!element) return;
@@ -102,18 +100,20 @@ export default function Dashboard() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <DashboardThemeSwitcher />
 
-          {/* ✅ EXPORT BUTTONS (ONLY ADDITION) */}
+          {/* EXPORT BUTTONS */}
           <div style={{ marginLeft: "24px", marginTop: "8px" }}>
             <div style={pillWrapperStyle}>
               <select
                 style={pillSelectStyle}
                 defaultValue=""
                 onChange={(e) => {
-                  handleExport(e.target.value);
+                  if (e.target.value) handleExport(e.target.value);
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>Export PDF</option>
+                <option value="" disabled>
+                  Export PDF
+                </option>
                 <option value="pdf">Export PDF</option>
               </select>
 
@@ -121,18 +121,27 @@ export default function Dashboard() {
                 style={pillSelectStyle}
                 defaultValue=""
                 onChange={(e) => {
-                  handleExport(e.target.value);
+                  if (e.target.value) handleExport(e.target.value);
                   e.target.value = "";
                 }}
               >
-                <option value="" disabled>Export Image</option>
+                <option value="" disabled>
+                  Export Image
+                </option>
                 <option value="image">Export Image</option>
               </select>
             </div>
           </div>
         </div>
 
-/* ───────────────── Dashboard Canvas ───────────────── */
+        {/* RIGHT PANEL */}
+        <DashboardCanvas />
+      </div>
+    </DashboardThemeProvider>
+  );
+}
+
+/* ───────────────── Dashboard Canvas (UNCHANGED) ───────────────── */
 
 function DashboardCanvas() {
   const { theme } = useDashboardTheme();
@@ -153,6 +162,7 @@ function DashboardCanvas() {
     data?.profile?.categorical_values || {};
 
   const numericColumns = Object.keys(numericStats);
+
 
   /* ─── Chart 1 state ─── */
   const [selectedColumn, setSelectedColumn] = useState("");
@@ -809,4 +819,5 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
