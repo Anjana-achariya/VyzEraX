@@ -53,7 +53,7 @@ const pillWrapperStyle = {
 
 const pillSelectStyle = {
   height: "32px",
-  minWidth: "130px",
+  width: "130px",         
   padding: "0 12px",
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
@@ -618,3 +618,4 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
