@@ -40,11 +40,22 @@ export default function DashboardThemeSwitcher() {
   );
 }
 
+// const selectStyle = {
+//   padding: "6px 10px",
+//   borderRadius: "8px",
+//   border: "1px solid rgba(0,0,0,0.25)",
+//   fontSize: "14px",
+//   cursor: "pointer",
+//   background: "white",
+// };
 const selectStyle = {
-  padding: "6px 10px",
+  height: "32px",        // keep height consistent
+  padding: "6px 20px", 
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
   fontSize: "14px",
   cursor: "pointer",
   background: "white",
+  whiteSpace: "nowrap",
 };
+
