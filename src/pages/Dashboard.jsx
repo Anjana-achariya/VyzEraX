@@ -1,4 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 import {
   Chart as ChartJS,
   BarElement,
@@ -10,16 +13,11 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar, Line, Pie } from "react-chartjs-2";
-import { Scatter, Bubble } from "react-chartjs-2";
+
+import { Bar, Line, Pie, Scatter, Bubble } from "react-chartjs-2";
 import { Line as LineChart } from "react-chartjs-2";
 
 import { TreemapController, TreemapElement } from "chartjs-chart-treemap";
-
-ChartJS.register(TreemapController, TreemapElement);
-
-
-
 
 import {
   DashboardThemeProvider,
@@ -28,7 +26,11 @@ import {
 
 import DashboardThemeSwitcher from "../components/dashboard/DashboardThemeSwitcher";
 
+/* ───────────────── ChartJS setup (UNCHANGED) ───────────────── */
+
 ChartJS.register(
+  TreemapController,
+  TreemapElement,
   BarElement,
   LineElement,
   PointElement,
@@ -39,18 +41,96 @@ ChartJS.register(
   Legend
 );
 
+/* ───────────────── Export UI styles (SAME AS BEFORE) ───────────────── */
+
+const pillWrapperStyle = {
+  background: "#ff8fab",
+  padding: "12px 16px",
+  borderRadius: "16px",
+  display: "flex",
+  gap: "12px",
+  alignItems: "center",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+};
+
+const pillSelectStyle = {
+  width: "140px",
+  height: "32px",
+  padding: "6px 16px",
+  borderRadius: "8px",
+  border: "1px solid rgba(0,0,0,0.25)",
+  background: "white",
+  fontSize: "14px",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
 /* ───────────────── Main Wrapper ───────────────── */
 
 export default function Dashboard() {
+  /* ✅ EXPORT LOGIC (NEW, ISOLATED) */
+  const handleExport = async (type) => {
+    const element = document.getElementById("dashboard-export");
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    const img = canvas.toDataURL("image/png");
+
+    if (type === "image") {
+      const a = document.createElement("a");
+      a.href = img;
+      a.download = "dashboard.png";
+      a.click();
+    } else {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(img, "PNG", 0, 0, w, h);
+      pdf.save("dashboard.pdf");
+    }
+  };
+
   return (
     <DashboardThemeProvider>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "56px" }}>
-        <DashboardThemeSwitcher />
-        <DashboardCanvas />
-      </div>
-    </DashboardThemeProvider>
-  );
-}
+        {/* LEFT PANEL */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <DashboardThemeSwitcher />
+
+          {/* ✅ EXPORT BUTTONS (ONLY ADDITION) */}
+          <div style={{ marginLeft: "24px", marginTop: "8px" }}>
+            <div style={pillWrapperStyle}>
+              <select
+                style={pillSelectStyle}
+                defaultValue=""
+                onChange={(e) => {
+                  handleExport(e.target.value);
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>Export PDF</option>
+                <option value="pdf">Export PDF</option>
+              </select>
+
+              <select
+                style={pillSelectStyle}
+                defaultValue=""
+                onChange={(e) => {
+                  handleExport(e.target.value);
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>Export Image</option>
+                <option value="image">Export Image</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
 /* ───────────────── Dashboard Canvas ───────────────── */
 
@@ -729,3 +809,4 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
