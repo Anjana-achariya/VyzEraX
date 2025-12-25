@@ -52,15 +52,15 @@ const pillWrapperStyle = {
   boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
 };
 
-const pillSelectStyle = {
-  width: "140px",
+const pillButtonStyle = {
   height: "32px",
-  padding: "6px 16px",
+  padding: "0 18px",
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
   background: "white",
   fontSize: "14px",
   cursor: "pointer",
+  fontWeight: 500,
 };
 
 /* ───────────────── Main Wrapper ───────────────── */
@@ -99,32 +99,22 @@ export default function Dashboard() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <DashboardThemeSwitcher />
 
-          {/* EXPORT */}
+          {/* EXPORT BUTTONS */}
           <div style={{ marginLeft: "24px", marginTop: "8px" }}>
             <div style={pillWrapperStyle}>
-              <select
-                style={pillSelectStyle}
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) handleExport(e.target.value);
-                  e.target.value = "";
-                }}
+              <button
+                style={pillButtonStyle}
+                onClick={() => handleExport("pdf")}
               >
-                <option value="" disabled>Export PDF</option>
-                <option value="pdf">Export PDF</option>
-              </select>
+                Export PDF
+              </button>
 
-              <select
-                style={pillSelectStyle}
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) handleExport(e.target.value);
-                  e.target.value = "";
-                }}
+              <button
+                style={pillButtonStyle}
+                onClick={() => handleExport("image")}
               >
-                <option value="" disabled>Export Image</option>
-                <option value="image">Export Image</option>
-              </select>
+                Export Image
+              </button>
             </div>
           </div>
         </div>
@@ -141,19 +131,23 @@ export default function Dashboard() {
 function DashboardCanvas() {
   const { theme } = useDashboardTheme();
 
-  /* DATA */
   const stored = sessionStorage.getItem("analysisResult");
   const data = stored ? JSON.parse(stored) : null;
 
-  const rawName = sessionStorage.getItem("uploadedFileName") || "Dataset";
+  const rawName =
+    sessionStorage.getItem("uploadedFileName") || "Dataset";
+
   const fileName = rawName.replace(/\.(csv|xlsx)$/i, "").toUpperCase();
 
   const numericStats = data?.profile?.numeric_stats || {};
-  const categoricalCols = data?.profile?.column_summary?.categorical || [];
-  const categoricalValues = data?.profile?.categorical_values || {};
+  const categoricalCols =
+    data?.profile?.column_summary?.categorical || [];
+  const categoricalValues =
+    data?.profile?.categorical_values || {};
+
   const numericColumns = Object.keys(numericStats);
 
-  /* STATES */
+  /* ─── STATES ─── */
   const [selectedColumn, setSelectedColumn] = useState("");
   const [chartType, setChartType] = useState("Histogram");
 
@@ -168,15 +162,17 @@ function DashboardCanvas() {
   const [timeY, setTimeY] = useState("");
   const [timeChartType, setTimeChartType] = useState("Line");
 
-  /* EFFECTS */
+  /* ─── EFFECTS ─── */
   useEffect(() => {
-    if (!selectedColumn && numericColumns.length > 0)
+    if (!selectedColumn && numericColumns.length > 0) {
       setSelectedColumn(numericColumns[0]);
+    }
   }, [numericColumns, selectedColumn]);
 
   useEffect(() => {
-    if (!catColumn && categoricalCols.length > 0)
+    if (!catColumn && categoricalCols.length > 0) {
       setCatColumn(categoricalCols[0]);
+    }
   }, [categoricalCols, catColumn]);
 
   useEffect(() => {
@@ -188,13 +184,13 @@ function DashboardCanvas() {
     }
   }, [numericColumns, xAxis, yAxis, timeX, timeY]);
 
-  /* KPI */
+  /* ─── KPIs ─── */
   const kpis = numericColumns.slice(0, 5).map((col) => ({
     label: `${col} (Mean)`,
     value: numericStats[col].mean,
   }));
 
-  /* HISTOGRAM */
+  /* ─── Histogram ─── */
   const histogram = useMemo(() => {
     const stats = numericStats[selectedColumn];
     if (!stats) return { labels: [], counts: [] };
@@ -202,23 +198,26 @@ function DashboardCanvas() {
     const bins = 10;
     const min = Math.floor(stats.min);
     const max = Math.ceil(stats.max);
-    const step = Math.ceil(Math.max(1, max - min) / bins);
+    const step = Math.max(1, Math.ceil((max - min) / bins));
 
     const labels = [];
     const counts = [];
 
     for (let i = 0; i < bins; i++) {
-      labels.push(`${min + i * step}–${min + (i + 1) * step}`);
-      counts.push(Math.max(1, Math.round(stats.std || 1)));
+      const start = min + i * step;
+      const end = start + step;
+      labels.push(`${start}–${end}`);
+      counts.push(Math.max(1, Math.round(stats.mean / (i + 1))));
     }
 
     return { labels, counts };
   }, [numericStats, selectedColumn]);
 
-  /* CATEGORY */
+  /* ─── Category distribution ─── */
   const categoryDistribution = useMemo(() => {
     const obj = categoricalValues[catColumn];
     if (!obj) return { labels: [], counts: [] };
+
     const entries = Object.entries(obj);
     return {
       labels: entries.map(([k]) => k),
@@ -226,85 +225,91 @@ function DashboardCanvas() {
     };
   }, [categoricalValues, catColumn]);
 
-  /* SCATTER */
-  const scatterData = useMemo(() => {
-    if (!xAxis || !yAxis) return [];
-    const x = numericStats[xAxis];
-    const y = numericStats[yAxis];
-    if (!x || !y) return [];
-
-    return Array.from({ length: 30 }, (_, i) => ({
-      x: x.min + (i / 29) * (x.max - x.min),
-      y: y.min + (i / 29) * (y.max - y.min),
-      r: scatterType === "Bubble" ? 6 + (i % 5) * 2 : undefined,
-    }));
-  }, [numericStats, xAxis, yAxis, scatterType]);
-
-  /* TREND */
-  const timelineData = useMemo(() => {
-    if (!timeX || !timeY) return [];
-    const x = numericStats[timeX];
-    const y = numericStats[timeY];
-    if (!x || !y) return [];
-
-    return Array.from({ length: 12 }, (_, i) => ({
-      x: Math.round(x.min + (i / 11) * (x.max - x.min)),
-      y: y.min + (i / 11) * (y.max - y.min),
-    }));
-  }, [numericStats, timeX, timeY]);
-
-  /* SCALE FIX */
   return (
-    <div style={{ transform: "scale(0.9)", transformOrigin: "top left", width: "111%" }}>
+    <div
+      id="dashboard-export"
+      style={{
+        background: theme.colors.background,
+        color: theme.colors.text,
+        padding: "32px",
+        borderRadius: "20px",
+        minHeight: "80vh",
+        flex: 1,
+      }}
+    >
+      <h1 style={{ fontSize: "28px", marginBottom: "24px" }}>
+        {fileName} DASHBOARD
+      </h1>
+
+      {/* KPI ROW */}
       <div
-        id="dashboard-export"
         style={{
-          background: theme.colors.background,
-          color: theme.colors.text,
-          padding: "32px",
-          borderRadius: "20px",
-          minHeight: "80vh",
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: "16px",
+          marginBottom: "32px",
         }}
       >
-        <h1 style={{ fontSize: "28px", marginBottom: "24px" }}>
-          {fileName} DASHBOARD
-        </h1>
+        {kpis.map((kpi, i) => (
+          <DashboardCard key={i}>
+            <p style={{ fontSize: "14px", opacity: 0.7 }}>
+              {kpi.label}
+            </p>
+            <h3 style={{ fontSize: "22px", marginTop: "8px" }}>
+              {formatValue(kpi.value)}
+            </h3>
+          </DashboardCard>
+        ))}
+      </div>
 
-        {/* KPI ROW */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px", marginBottom: "32px" }}>
-          {kpis.map((k, i) => (
-            <DashboardCard key={i}>
-              <p style={{ opacity: 0.7 }}>{k.label}</p>
-              <h3 style={{ color: theme.colors.accent }}>{formatValue(k.value)}</h3>
-            </DashboardCard>
-          ))}
-        </div>
+      {/* CHART GRID */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+        <DashboardCard height="280px">
+          <Bar
+            data={{
+              labels: histogram.labels,
+              datasets: [{ data: histogram.counts }],
+            }}
+            options={{ responsive: true }}
+          />
+        </DashboardCard>
 
-        {/* CHART GRID */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-          <DashboardCard><Bar data={{ labels: histogram.labels, datasets: [{ data: histogram.counts, backgroundColor: theme.colors.accent }] }} /></DashboardCard>
-          <DashboardCard><Pie data={{ labels: categoryDistribution.labels, datasets: [{ data: categoryDistribution.counts }] }} /></DashboardCard>
-          <DashboardCard><Scatter data={{ datasets: [{ data: scatterData, backgroundColor: theme.colors.accent }] }} /></DashboardCard>
-          <DashboardCard><LineChart data={{ labels: timelineData.map(p => p.x), datasets: [{ data: timelineData.map(p => p.y), borderColor: theme.colors.accent }] }} /></DashboardCard>
-        </div>
+        <DashboardCard height="280px">
+          <Pie
+            data={{
+              labels: categoryDistribution.labels,
+              datasets: [{ data: categoryDistribution.counts }],
+            }}
+            options={{ responsive: true }}
+          />
+        </DashboardCard>
       </div>
     </div>
   );
 }
 
-/* HELPERS */
+/* ───────────────── Helpers ───────────────── */
 
-function DashboardCard({ children }) {
+function DashboardCard({ children, height }) {
   const { theme } = useDashboardTheme();
   return (
-    <div style={{ background: theme.colors.card, padding: "16px", borderRadius: "14px" }}>
+    <div
+      style={{
+        background: theme.colors.card,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: "14px",
+        padding: "16px",
+        height,
+      }}
+    >
       {children}
     </div>
   );
 }
 
 function formatValue(v) {
+  if (typeof v !== "number") return v;
   if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
-  return v?.toFixed?.(2) ?? v;
+  return v.toFixed(2);
 }
