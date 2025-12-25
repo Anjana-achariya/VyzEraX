@@ -52,8 +52,9 @@ const pillWrapperStyle = {
 };
 
 const pillSelectStyle = {
+  width: "140px",          // ⭐ MUST MATCH
   height: "32px",
-  padding: "0 20px",        // ⭐ MORE INNER SPACE
+  padding: "6px 16px",
   borderRadius: "8px",
   border: "1px solid rgba(0,0,0,0.25)",
   background: "white",
@@ -61,7 +62,6 @@ const pillSelectStyle = {
   cursor: "pointer",
   whiteSpace: "nowrap",
 };
-
 
 /* ───────────────── Main Wrapper ───────────────── */
 
@@ -618,5 +618,6 @@ function formatValue(v) {
   if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + "K";
   return v.toFixed(2);
 }
+
 
 
