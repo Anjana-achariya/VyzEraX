@@ -1,4 +1,3 @@
-can you provide the whole update dcode 
 import { useDashboardTheme } from "../../context/DashboardThemeContext";
 
 export default function DashboardThemeSwitcher() {
@@ -60,3 +59,4 @@ const selectStyle = {
   background: "white",
   whiteSpace: "nowrap",
 };
+
